@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPERIMENT!</title>
+</head>
+<body>
+    <style>
+        /* canvas { background: rgb(190, 22, 50); } */
+        canvas { background: black; }
+    </style>
+
+    <!-- <canvas id="canvas" width="800" height="800"></canvas> -->
+    <canvas id="canvas"></canvas>
+    
+    <script>
+
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+        canvas.setAttribute('width', window.innerWidth);
+        canvas.setAttribute('height', window.innerHeight);
+
+        let cw = canvas.width;
+        let ch = canvas.height;
+        let target_colour = "blue";
+        let start = false;
+        let lives = 3;
+        
+        let p = 100;
+        let count = 100;
+        let score = 0;
+     
+        let gameState = true;
+        // let gameInit = true;
+       
+//////////////////////////////
+
+        titleScreen();
+
+          
+//////////////////////////////
+
+        function titleScreen() {
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            function drawTitle() {
+                ctx.font = '60px serif';
+                ctx.fillStyle = target_colour;
+                ctx.fillText("EXPLOSION GAME!", cw/2, ch/6);
+            };
+
+            drawTitle();
+            canvas.onclick = playGame;
+        };
+
+//////////////////////////////////
+
+    function playGame() {
+
+            // let p = 50; //number of targets
+            let targets = [];
+            let z = 0;
+
+            let gameInit = true;
+
+            function createTargets() {
+                for (let i=0; i<p; i++){
+                    let target = {
+                    id: i+1,
+                    x: Math.floor(Math.random() * cw), 
+                    // y: Math.floor(Math.random() * ch), 
+                    y: Math.floor((Math.random() * (ch/5)) + ch), // starting range, starting floor
+                    // y: 700,
+                    r: Math.floor(cw/190),
+                    max_r: Math.floor(cw/6),
+                    distance: 0,
+                    ceiling: 0,
+                    ceiling: Math.floor((Math.random() * (ch/5)) - (ch/5)), // lower level, upper level
+                    ascending: true,
+                    descending: false,
+                    activated: false,
+                    shrinking: false,
+                    velocityUp: Math.floor(Math.random() * 4 + 6),
+                    velocityDown: Math.floor(Math.random() * 4 + 6),
+                    explosionSpeed: 2,
+                    colour: target_colour,
+                    special: Math.floor(Math.random() * p),
+                    dead: false
+                    };
+                    targets.push (target);
+                };
+            };
+                
+            function displayTargets() {
+                for (let i=0; i<targets.length; i++) {
+                    ctx.beginPath();
+                    ctx.arc(targets[i].x, targets[i].y, targets[i].r, 0, 2 * Math.PI);
+                    ctx.fillStyle = targets[i].colour;
+                    ctx.fill();
+                };
+            };
+
+            function moveTargets() {
+                for (let i=0; i<targets.length; i++) {
+                    if (targets[i].ascending == true) {
+                        targets[i].y = targets[i].y-(targets[i].velocityUp)
+                    };
+                    if (targets[i].y < targets[i].ceiling) {
+                        targets[i].ascending = false
+                    };
+                    if (targets[i].ascending == false) {
+                        targets[i].y = targets[i].y+(targets[i].velocityDown)
+                    };
+                }; 
+            };
+
+            function compareTargets() {
+                for (let i=0; i<targets.length; i++){
+                    for (let j=i+1; j<targets.length; j++) {
+
+                            let dx = targets[i].x - targets[j].x;
+                            let dy = targets[i].y  - targets[j].y;
+                            let vector_distance = ((dx * dx) + (dy * dy));
+                            let vector_radius = ((targets[i].r + targets[j].r) * (targets[i].r + targets[j].r));
+
+                        if ((vector_distance < vector_radius) & (targets[i].activated == true || targets[j].activated == true))  {
+                        
+                            targets[i].activated = true;
+                            targets[j].activated = true;
+
+                            targets[i].velocityUp = 0;
+                            targets[j].velocityUp = 0;
+
+                            targets[i].velocityDown = 0;
+                            targets[j].velocityDown = 0;
+
+                        
+                            targets[i].colour = target_colour;
+                            targets[j].colour = target_colour; 
+                        }; 
+                    };
+                };    
+            };
+
+            function addBomb(e) {
+                if (lives > 0 ) {
+                let target = {
+                    id: targets.length+1,
+                    x: e.clientX,
+                    y: e.clientY, 
+                    r: 10,
+                    max_r: Math.floor(cw/8),
+                    // max_r: 100,
+                    distance: 0,
+                    ceiling: null,
+                    ascending: true,
+                    descending: false,
+                    activated: true,
+                    shrinking: false,
+                    velocityUp: 0,
+                    velocityDown: 0,
+                    explosionSpeed: 2,
+                    colour: target_colour,
+                    dead: false
+                    };
+                    targets.push(target);           
+                    lives--;
+                  
+                    if (count > 0) { count-- };
+                };
+            };
+
+            function drawExplosion() {
+                for (let i=0; i<targets.length; i++) {
+                    if (targets[i].activated == true & targets[i].shrinking == false & targets[i].r < targets[i].max_r) {
+                        targets[i].r = targets[i].r+targets[i].explosionSpeed;          
+                    };
+                    if (targets[i].activated == true & targets[i].shrinking == false & targets[i].r == targets[i].max_r) {
+                        targets[i].shrinking = true;
+                    };
+                    if (targets[i].activated == true & targets[i].shrinking == true & targets[i].r > 0) {
+                        targets[i].r = targets[i].r-targets[i].explosionSpeed;
+                    };
+                };
+            }; 
+
+            function deleteTarget() {
+                for (let i=0; i<targets.length; i++) {
+                    if (targets[i].r == 0) {
+                        targets.splice(i,1);
+                        // count--;
+                        score++;
+                        addLife();
+
+                    } else if (targets[i].ascending == false & targets[i].y > canvas.height) {
+                        targets.splice(i,1);
+                        count--;
+                       
+                    };     
+                };
+            };
+
+
+            function addLife() {
+                if (score%10 == 0) {
+                    lives ++
+                };
+            };
+                    
+
+            function drawLives() {
+                ctx.font = '40px serif';
+                ctx.fillStyle = "yellow";
+                ctx.fillText(`Lives: ${lives}`, cw/70, ch/20);
+            };
+
+            function drawCount() {
+                ctx.font = '40px serif';
+                ctx.fillStyle = "yellow";
+                if (count > 0) {
+                    ctx.fillStyle = "yellow";
+                    ctx.fillText(`Count: ${count}`, cw/70+cw/1.2, ch/20);
+                } else {
+                    ctx.fillStyle = "red";
+                    ctx.fillText(`Count: 0`, cw/70+cw/1.2, ch/20);
+                }
+            };
+
+            function drawScore() {
+                ctx.font = '40px serif';
+                ctx.fillStyle = "yellow";
+                ctx.fillText(`Score: ${score}`, cw/70+cw/1.6, ch/20);
+            };
+
+///////////////////////////////////////////////////
+
+            console.log(count);
+            canvas.onclick = addBomb;
+            createTargets();
+
+    ///////////////////////////////////////////////////
+
+            function draw() {
+                
+               ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                function loop () {
+                
+                moveTargets();
+                drawExplosion();
+                deleteTarget();
+                if (targets.length > 0) { compareTargets() };
+                if (targets.length == 0) { gameInit = false };
+                displayTargets();
+
+                // addScore();
+                drawScore();
+                drawLives();
+                drawCount();
+                }
+                
+                loop();
+                console.log(targets.length);
+
+
+                
+
+                
+                if (gameInit == true) { 
+                    requestAnimationFrame(draw);
+                }
+                 
+                    // if (count == 0 & lives > 0) {
+                    //     playGame();
+                        
+                    // }
+                   
+                  
+                     if (targets.length == 0 & count > 0) {
+                       
+                        setTimeout(() => {  playGame(); }, 1000);
+                    };
+
+
+                     if (targets.length == 0 & count < 1) {
+                       
+                       setTimeout(() => {  gameOverScreen(); }, 1000);
+                   };
+
+
+
+            }
+            draw();                   
+       };
+
+//////////////////////////////////
+
+       
+
+    function gameOverScreen() {
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '120px serif';
+        ctx.fillStyle = target_colour;
+        ctx.fillText("GAME OVER!", cw/2, ch/6);
+
+        setTimeout(() => {  
+            titleScreen();
+            lives = 3;
+            count = p;
+         }, 2000);
+    };
+
+    </script>
+</body>
+</html>
