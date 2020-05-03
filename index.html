@@ -23,7 +23,7 @@
 
         let cw = canvas.width;
         let ch = canvas.height;
-        let target_colour = "pink";
+        let target_colour = "red";
         let start = false;
         let lives = 3;
         
@@ -46,9 +46,11 @@
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             function drawTitle() {
-                ctx.font = '60px serif';
+                ctx.font = '160px monaco';
                 ctx.fillStyle = target_colour;
-                ctx.fillText("EXPLOSION GAME!", cw/2, ch/6);
+                ctx.textAlign = "center";
+                ctx.fillText("BOMBS AWAY!", cw/2, ch/2);
+                
             };
 
             drawTitle();
@@ -86,10 +88,11 @@
                     velocityDown: Math.floor(Math.random() * 4 + 6),
                     explosionSpeed: 2,
                     colour: target_colour,
-                    special: Math.floor(Math.random() * p),
+                    special: false,
                     dead: false
                     };
                     targets.push (target);
+                    
                 };
             };
                 
@@ -136,9 +139,13 @@
                             targets[i].velocityDown = 0;
                             targets[j].velocityDown = 0;
 
-                        
+                            
                             targets[i].colour = target_colour;
-                            targets[j].colour = target_colour; 
+                            // targets[j].colour = target_colour; 
+
+                            
+
+                           
                         }; 
                     };
                 };    
@@ -162,7 +169,8 @@
                     velocityUp: 0,
                     velocityDown: 0,
                     explosionSpeed: 2,
-                    colour: target_colour,
+                    colour: "white",
+                    special: false,
                     dead: false
                     };
                     targets.push(target);           
@@ -171,6 +179,33 @@
                     if (count > 0) { count-- };
                 };
             };
+
+            function addSpecial() {
+                 let target = {
+                    x: Math.floor(Math.random() * cw), 
+                    // y: Math.floor(Math.random() * ch), 
+                    y: Math.floor((Math.random() * (ch/5)) + ch), // starting range, starting floor
+                    // y: 700,
+                    r: Math.floor(cw/190),
+                    max_r: Math.floor(cw/6),
+                    distance: 0,
+                    ceiling: 0,
+                    ceiling: Math.floor((Math.random() * (ch/5)) - (ch/5)), // lower level, upper level
+                    ascending: true,
+                    descending: false,
+                    activated: false,
+                    shrinking: false,
+                    velocityUp: Math.floor(Math.random() * 4 + 6),
+                    velocityDown: Math.floor(Math.random() * 4 + 6),
+                    explosionSpeed: 2,
+                    colour: "blue",
+                    special: true,
+                    dead: false
+                    };
+                    targets.push(target);
+                    // if (target.special == true && target.activated == true) { console.log("YESSSS")};
+                };
+
 
             function drawExplosion() {
                 for (let i=0; i<targets.length; i++) {
@@ -185,6 +220,7 @@
                     };
                 };
             }; 
+            
 
             function deleteTarget() {
                 for (let i=0; i<targets.length; i++) {
@@ -192,7 +228,9 @@
                         targets.splice(i,1);
                         // count--;
                         score++;
-                        addLife();
+                        // lives ++;
+                        // addLife();
+                        
 
                     } else if (targets[i].ascending == false & targets[i].y > canvas.height) {
                         targets.splice(i,1);
@@ -204,41 +242,55 @@
 
 
             function addLife() {
-                if (score%10 == 0) {
-                    lives ++
+                for (let i=0; i<targets.length; i++) {
+                    if (targets[i].activated == true & targets[i].special == true) {
+                        lives ++;
+                    };
+                
                 };
             };
                     
 
             function drawLives() {
-                ctx.font = '40px serif';
+                ctx.font = '40px monaco';
                 ctx.fillStyle = "yellow";
-                ctx.fillText(`Lives: ${lives}`, cw/70, ch/20);
+                ctx.textAlign = "start";
+                ctx.fillText(`Lives: ${lives}`, 0, ch/20);
             };
 
             function drawCount() {
-                ctx.font = '40px serif';
+                ctx.font = '40px monaco';
                 ctx.fillStyle = "yellow";
                 if (count > 0) {
                     ctx.fillStyle = "yellow";
-                    ctx.fillText(`Count: ${count}`, cw/70+cw/1.2, ch/20);
+                    ctx.textAlign = "end";
+                    ctx.fillText(`Count: ${count}`, cw, ch/20);
                 } else {
                     ctx.fillStyle = "red";
-                    ctx.fillText(`Count: 0`, cw/70+cw/1.2, ch/20);
+                    ctx.textAlign = "end";
+                    ctx.fillText(`Count: 0`, cw, ch/20);
                 }
             };
 
             function drawScore() {
-                ctx.font = '40px serif';
+                ctx.font = '40px monaco';
                 ctx.fillStyle = "yellow";
-                ctx.fillText(`Score: ${score}`, cw/70+cw/1.6, ch/20);
+                ctx.textAlign = "center";
+                ctx.fillText(`Score: ${score}`, cw/2, ch/20);
             };
 
 ///////////////////////////////////////////////////
 
             console.log(count);
-            canvas.onclick = addBomb;
+            // canvas.onclick = addBomb;
+            
             createTargets();
+            addSpecial();
+           
+           
+           
+
+            canvas.onclick = addBomb;
 
     ///////////////////////////////////////////////////
 
@@ -251,11 +303,13 @@
                 moveTargets();
                 drawExplosion();
                 deleteTarget();
+                // addLife();
                 if (targets.length > 0) { compareTargets() };
                 if (targets.length == 0) { gameInit = false };
                 displayTargets();
 
                 // addScore();
+                
                 drawScore();
                 drawLives();
                 drawCount();
@@ -264,6 +318,7 @@
                 loop();
                 console.log(targets.length);
 
+                
 
                 
 
@@ -288,6 +343,7 @@
                        
                        setTimeout(() => {  gameOverScreen(); }, 1000);
                    };
+                   
 
 
 
@@ -298,13 +354,17 @@
 //////////////////////////////////
 
        
-
     function gameOverScreen() {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '120px serif';
+        ctx.font = '120px monaco';
         ctx.fillStyle = target_colour;
-        ctx.fillText("GAME OVER!", cw/2, ch/6);
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER!", cw/2, ch/2);
+        ctx.font = '120px monaco';
+        ctx.fillStyle = "blue";
+        ctx.textAlign = "center";
+        ctx.fillText(`Score: ${score}`, cw/2, ch/7);
 
         setTimeout(() => {  
             titleScreen();
